@@ -15,7 +15,7 @@ Automatically syncs UFC events, concerts, and comedy shows to Google Calendar wi
 - Multi-platform sync (Google Calendar + Notion)
 
 ## ⚙️ Setup Guide
-1. Import `workflow.json` to n8n
+1. Import `Events_enrichment_workflow.json` to n8n
 2. Configure these environment variables:
    - `OPENAI_API_KEY`
    - `GOOGLE_CALENDAR_CREDENTIALS`
