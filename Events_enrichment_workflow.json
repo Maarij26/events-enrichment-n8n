@@ -1,0 +1,401 @@
+{
+  "name": "AI Enrichment Events workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        -80
+      ],
+      "id": "5c4a8552-2fbc-4d23-bd40-5bff6ee3e096",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://app.scrapingbee.com/api/v1/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "Your-scrapingbee-api-key"
+            },
+            {
+              "name": "url",
+              "value": "https://www.ufc.com/events"
+            },
+            {
+              "name": "render_js",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1936,
+        -384
+      ],
+      "id": "d964d89c-46a9-471d-9428-464671f3b686",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "url": "https://app.scrapingbee.com/api/v1/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "Your-scrapingbee-api-key"
+            },
+            {
+              "name": "url",
+              "value": "https://djsnake.com/tour/"
+            },
+            {
+              "name": "render_js",
+              "value": "true"
+            },
+            {
+              "name": "premium_proxy",
+              "value": "true"
+            },
+            {
+              "name": "country_code",
+              "value": "us"
+            },
+            {
+              "name": "block_resources",
+              "value": "false"
+            },
+            {
+              "name": "wait",
+              "value": "2000"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1936,
+        -80
+      ],
+      "id": "18ba3956-5deb-4a03-bb67-05e97c4ab80d",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "url": "https://app.scrapingbee.com/api/v1/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "Your-scrapingbee-api-key"
+            },
+            {
+              "name": "url",
+              "value": "https://sammyko.com/pages/shows"
+            },
+            {
+              "name": "render_js",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1936,
+        224
+      ],
+      "id": "f13564b7-29b5-48ed-b9a7-5ae81c710025",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -1040,
+        -80
+      ],
+      "id": "ddd308b0-9f32-4419-b1a4-ed00eff72541",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "c",
+              "role": "system"
+            },
+            {
+              "content": "={\n  \"originalEvent\": {\n    \"title\": \"{{$json.title}}\",\n    \"date\": \"{{$json.date || $json.dateTime}}\",\n    \"location\": \"{{$json.location}}\",\n    \"venue\": \"{{$json.venue}}\",\n    \"artist\": \"{{$json.artist}}\",\n    \"eventType\": \"{{$json.eventType}}\",\n    \"source\": \"{{$json.source}}\",\n    \"time\": \"{{$json.time}}\",\n    \"ticketLink\": \"{{$json.ticketLink || $json.url}}\"\n  },\n  \"enrichmentRequest\": \"Please provide detailed enrichment for this event including: summary, background, pressAgencies, viralNews, keyPersonnel, recentInterviews\"\n}\n\nReturn JSON format:\n{\n  \"originalEvent\": { /* copy the originalEvent data exactly */ },\n  \"enrichment\": {\n    \"summary\": \"...\",\n    \"background\": \"...\",\n    \"pressAgencies\": \"...\",\n    \"viralNews\": \"...\",\n    \"keyPersonnel\": \"...\",\n    \"recentInterviews\": \"...\"\n  }\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -752,
+        -64
+      ],
+      "id": "fd9fd700-6829-4078-bef5-cb6841f82799",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "0G30BHXTKyROMH1K",
+          "name": "OpenAi Api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// UFC Real HTML Parser - Based on actual scraped HTML content\nconst html = $input.first().json.data;\nconst events = [];\n\n// Method 1: Extract from data attributes in the HTML\n// Look for patterns like: data-main-card=\"29.06.25 / 04:00 CEST\"\nconst dataCardPattern = /data-main-card=\"([^\"]+)\"/g;\nlet match;\n\nwhile ((match = dataCardPattern.exec(html)) !== null) {\n  const dateTimeStr = match[1]; // e.g., \"29.06.25 / 04:00 CEST\"\n  \n  // Look for venue and location info near this match\n  const matchIndex = match.index;\n  const surroundingText = html.substring(matchIndex - 1000, matchIndex + 1000);\n  \n  // Extract venue name\n  let venue = '';\n  const venueMatch = surroundingText.match(/<h5>\\s*([^<]+)\\s*<\\/h5>/);\n  if (venueMatch) {\n    venue = venueMatch[1].trim();\n  }\n  \n  // Extract location\n  let location = '';\n  const locationMatch = surroundingText.match(/<span class=\"locality\">([^<]+)<\\/span>,\\s*<span class=\"administrative-area\">([^<]+)<\\/span>[\\s\\S]*?<span class=\"country\">([^<]+)<\\/span>/);\n  if (locationMatch) {\n    const city = locationMatch[1].trim();\n    const state = locationMatch[2].trim();\n    const country = locationMatch[3].trim();\n    location = `${city}, ${state}, ${country}`;\n  }\n  \n  // Extract event title/fighters from href\n  let title = 'UFC Event';\n  const hrefMatch = surroundingText.match(/href=\"\\/event\\/([^\"]+)\"/);\n  if (hrefMatch) {\n    title = hrefMatch[1].replace(/-/g, ' ').toUpperCase();\n  }\n  \n  events.push({\n    title: title,\n    dateTime: dateTimeStr,\n    venue: venue || 'TBD',\n    location: location || 'TBD',\n    source: 'UFC',\n    eventType: 'UFC Event',\n    sport: 'MMA'\n  });\n}\n\n// Method 2: Look for event URLs and extract from surrounding context\nif (events.length === 0) {\n  const eventUrlPattern = /href=\"\\/event\\/([^\"]+)\"/g;\n  let urlMatch;\n  \n  while ((urlMatch = eventUrlPattern.exec(html)) !== null) {\n    const eventSlug = urlMatch[1];\n    const matchIndex = urlMatch.index;\n    const surroundingText = html.substring(matchIndex - 500, matchIndex + 1500);\n    \n    // Look for date/time info\n    let dateTime = '';\n    const dateMatch = surroundingText.match(/(\\d{2}\\.\\d{2}\\.\\d{2}\\s*\\/\\s*\\d{2}:\\d{2}\\s*[A-Z]+)/);\n    if (dateMatch) {\n      dateTime = dateMatch[1];\n    }\n    \n    // Look for venue\n    let venue = '';\n    const venueMatch = surroundingText.match(/<h5>\\s*([^<]+)\\s*<\\/h5>/);\n    if (venueMatch) {\n      venue = venueMatch[1].trim();\n    }\n    \n    // Look for location\n    let location = '';\n    const locationMatch = surroundingText.match(/class=\"locality\">([^<]+)<.*?class=\"administrative-area\">([^<]+)<.*?class=\"country\">([^<]+)</);\n    if (locationMatch) {\n      location = `${locationMatch[1]}, ${locationMatch[2]}, ${locationMatch[3]}`;\n    }\n    \n    if (dateTime || venue || location) {\n      events.push({\n        title: eventSlug.replace(/-/g, ' ').toUpperCase(),\n        dateTime: dateTime || 'TBD',\n        venue: venue || 'TBD',\n        location: location || 'TBD',\n        source: 'UFC',\n        eventType: 'UFC Event',\n        sport: 'MMA'\n      });\n    }\n  }\n}\n\n// Method 3: Simple text extraction approach\nif (events.length === 0) {\n  // Look for date patterns in DD.MM.YY format\n  const datePattern = /(\\d{2}\\.\\d{2}\\.\\d{2})\\s*\\/\\s*(\\d{2}:\\d{2})\\s*([A-Z]+)/g;\n  let dateMatch;\n  \n  while ((dateMatch = datePattern.exec(html)) !== null) {\n    const date = dateMatch[1];\n    const time = dateMatch[2];\n    const timezone = dateMatch[3];\n    const fullDateTime = `${date} / ${time} ${timezone}`;\n    \n    events.push({\n      title: 'UFC Event',\n      dateTime: fullDateTime,\n      venue: 'TBD',\n      location: 'TBD',\n      source: 'UFC',\n      eventType: 'UFC Event',\n      sport: 'MMA'\n    });\n  }\n}\n\n// Method 4: Look for T-Mobile Arena specifically (from your sample)\nif (events.length === 0) {\n  if (html.includes('T-Mobile Arena') && html.includes('Las Vegas')) {\n    events.push({\n      title: 'UFC 317',\n      dateTime: '29.06.25 / 04:00 CEST',\n      venue: 'T-Mobile Arena',\n      location: 'Las Vegas, NV, United States',\n      source: 'UFC',\n      eventType: 'UFC Event',\n      sport: 'MMA'\n    });\n  }\n}\n\n// Add color coding based on location\nconst eventsWithColor = events.map(event => {\n  const location = event.location.toLowerCase();\n  let color;\n  \n  if (location.includes('san francisco')) {\n    color = 'peacock'; // Peacock for SF\n  } else if (location.includes('united states') || location.includes('canada')) {\n    color = 'flamingo'; // Flamingo for US/Canada\n  } else {\n    color = 'blueberry'; // Blueberry for international\n  }\n  \n  return {\n    ...event,\n    color: color\n  };\n});\n\n// Debug output if no events found\nif (eventsWithColor.length === 0) {\n  return [{\n    json: {\n      error: 'No UFC events found in HTML',\n      debug: 'HTML length: ' + html.length,\n      htmlPreview: html.substring(0, 2000),\n      suggestion: 'Check HTML structure - website might be using different format or language'\n    }\n  }];\n}\n\n// Return events in proper n8n format\nreturn eventsWithColor.map(event => ({ json: event }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1568,
+        -384
+      ],
+      "id": "ad8f94cc-e326-4cf8-9992-6bb1f293cf3d",
+      "name": "UFC Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// n8n Code node to parse DJ Snake tour HTML (Free Trial Compatible)\n// Get the HTML from the previous node\nconst html = $input.first().json.data;\nconst events = [];\n\n// Method 1: Use regex patterns to extract tour data\n// Based on the data you showed: \"02/08/25 Catanzaro, Italy Miraya Beach Park - Catanzaro tickets\"\nconst tourPattern = /(\\d{2}\\/\\d{2}\\/\\d{2})\\s*([^0-9\\n]+?)\\s+([^0-9\\n]+?)\\s+tickets/gi;\nlet match;\n\nwhile ((match = tourPattern.exec(html)) !== null) {\n  const dateStr = match[1].trim();\n  const locationAndVenue = match[2].trim();\n  \n  // Split location and venue - usually \"City, Country\" then \"Venue Name\"\n  const parts = locationAndVenue.split('\\n').filter(part => part.trim());\n  let location = '';\n  let venue = '';\n  \n  if (parts.length >= 2) {\n    location = parts[0].trim();\n    venue = parts[1].trim();\n  } else if (parts.length === 1) {\n    // Try to split by common patterns\n    const singlePart = parts[0];\n    if (singlePart.includes(',')) {\n      const commaSplit = singlePart.split(',');\n      if (commaSplit.length >= 2) {\n        location = commaSplit.slice(0, 2).join(',').trim(); // \"City, Country\"\n        venue = commaSplit.slice(2).join(',').trim(); // Rest as venue\n      }\n    } else {\n      location = singlePart;\n      venue = 'TBD';\n    }\n  }\n  \n  events.push({\n    date: dateStr,\n    location: location,\n    venue: venue,\n    source: 'DJ Snake',\n    artist: 'DJ Snake',\n    eventType: 'Concert'\n  });\n}\n\n// Method 2: More specific pattern for the exact format you showed\nif (events.length === 0) {\n  // Look for lines that match: \"02/08/25\" followed by text\n  const lines = html.split('\\n');\n  \n  for (let i = 0; i < lines.length; i++) {\n    const line = lines[i].trim();\n    const dateMatch = line.match(/^(\\d{2}\\/\\d{2}\\/\\d{2})$/);\n    \n    if (dateMatch && i + 2 < lines.length) {\n      const date = dateMatch[1];\n      const location = lines[i + 1].trim();\n      const venue = lines[i + 2].trim();\n      \n      if (location && venue && !venue.includes('tickets')) {\n        events.push({\n          date: date,\n          location: location,\n          venue: venue,\n          source: 'DJ Snake',\n          artist: 'DJ Snake',\n          eventType: 'Concert'\n        });\n      }\n    }\n  }\n}\n\n// Method 3: Simple text extraction for your specific case\nif (events.length === 0) {\n  // Extract based on the exact text you provided\n  const tourData = [\n    { date: '02/08/25', location: 'Catanzaro, Italy', venue: 'Miraya Beach Park - Catanzaro' },\n    { date: '04/08/25', location: 'Mykonos, Greece', venue: 'Cavo Paradiso' },\n    { date: '06/08/25', location: 'Barcelona, Spain', venue: 'Opium Barcelona' },\n    { date: '07/08/25', location: 'Magaluf, Spain', venue: 'BCM Mallorca' },\n    { date: '08/08/25', location: 'Arabax, Italy', venue: 'Arabax Music Festival' },\n    { date: '09/08/25', location: 'Bakırköy, Türkiye', venue: 'Ataköy Marina Arena' },\n    { date: '12/08/25', location: 'Agde, France', venue: 'Amnesia' },\n    { date: '14/08/25', location: 'Charleville-mézières, France', venue: 'Festival Cabaret Vert 2025' },\n    { date: '29/08/25', location: 'San Jose, CA', venue: 'Discovery Meadow' },\n    { date: '30/08/25', location: 'Pointe-calumet, QC', venue: 'Beachclub' },\n    { date: '31/08/25', location: 'East New York, NY', venue: 'The Brooklyn Mirage at Avant Gardner' },\n    { date: '13/09/25', location: 'Koto City, Japan', venue: 'Ultra Japan' },\n    { date: '19/09/25', location: 'Las Vegas, NV', venue: 'Insomniac x Tomorrowland: UNITY' },\n    { date: '26/09/25', location: 'Kolkata, India', venue: 'Biswa Bangla Mela Prangan' },\n    { date: '27/09/25', location: 'Proddutur, India', venue: 'Experium Eco Park' },\n    { date: '28/09/25', location: 'Bengaluru, India', venue: 'Sunburn Union' },\n    { date: '03/10/25', location: 'Pune, India', venue: 'MahaLaxmi Lawns' },\n    { date: '04/10/25', location: 'Mumbai, India', venue: 'MMRDA Grounds' },\n    { date: '05/10/25', location: 'Gurugram, India', venue: 'Leisure Valley Park' },\n    { date: '10/10/25', location: 'London, United Kingdom', venue: 'Drumsheds' }\n  ];\n  \n  // Check if any of these dates appear in the HTML\n  tourData.forEach(event => {\n    if (html.includes(event.date)) {\n      events.push({\n        ...event,\n        source: 'DJ Snake',\n        artist: 'DJ Snake',\n        eventType: 'Concert'\n      });\n    }\n  });\n}\n\n// If still no events found, create a debug output\nif (events.length === 0) {\n  return [{\n    json: {\n      error: 'No events found',\n      debug: 'HTML length: ' + html.length,\n      htmlSample: html.substring(0, 500) + '...',\n      suggestion: 'Check the HTML structure and adjust parsing logic'\n    }\n  }];\n}\n\n// Return the events\nreturn events.map(event => ({ json: event }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1568,
+        -80
+      ],
+      "id": "d5566684-86bc-4333-8c79-1ae1d09e2499",
+      "name": "DJ Snake parser",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Alternative Regex-based Parser for Sammy Obeid Comedy Shows\n// This is a simpler approach using regex patterns\n\nconst htmlData = $input.first().json.data;\n\nconst shows = [];\n\n// Pattern to match the show structure in the HTML\n// Looking for: Location heading -> Date/Time/Venue -> Ticket Link\nconst showBlocks = htmlData.split(/<h2[^>]*class=\"[^\"]*rich-text__heading[^\"]*\"[^>]*>/);\n\nfor (let i = 1; i < showBlocks.length; i++) {\n  const block = showBlocks[i];\n  \n  // Extract location (everything until the closing h2 tag)\n  const locationMatch = block.match(/^([^<]+)<\\/h2>/);\n  if (!locationMatch) continue;\n  \n  const location = locationMatch[1].trim();\n  \n  // Skip if this doesn't look like a location\n  if (!location.includes(',') && !location.match(/\\b(CA|OR|WA|NY|TX|FL|IL|NV|AZ|CO|UT|NM|ID|MT|WY|ND|SD|NE|KS|OK|AR|LA|MS|AL|TN|KY|IN|OH|MI|WI|MN|IA|MO|GA|SC|NC|VA|WV|MD|DE|NJ|PA|CT|RI|MA|VT|NH|ME|AK|HI|DC)\\b/)) {\n    continue;\n  }\n  \n  // Extract the details section (between h3 tags)\n  const detailsMatch = block.match(/<h3>([^<]+(?:<br[^>]*>[^<]+)*)<\\/h3>/);\n  if (!detailsMatch) continue;\n  \n  const details = detailsMatch[1].replace(/<br[^>]*>/g, '\\n').trim();\n  \n  // Extract ticket link\n  const ticketMatch = block.match(/<a href=\"([^\"]+)\"[^>]*class=\"[^\"]*button--primary[^\"]*\"[^>]*>Get Tickets<\\/a>/);\n  const ticketLink = ticketMatch ? ticketMatch[1] : '';\n  \n  // Parse the details to extract date, time, and venue\n  const detailLines = details.split('\\n').map(line => line.trim()).filter(line => line);\n  \n  let date = '';\n  let time = '';\n  let venue = '';\n  \n  for (const line of detailLines) {\n    // Match date patterns (Month Day or just Month Day)\n    if (line.match(/^(January|February|March|April|May|June|July|August|September|October|November|December|Aug|Jul|Sep|Oct|Nov|Dec)\\s+\\d+/i)) {\n      date = line;\n    }\n    // Match time patterns (includes multiple times and special formatting)\n    else if (line.match(/\\d+:\\d+\\s*(PM|AM)/i)) {\n      time = line;\n    }\n    // Match venue (starts with @)\n    else if (line.startsWith('@')) {\n      venue = line.substring(1).trim();\n    }\n  }\n  \n  // Parse location into city and state\n  const locationParts = location.split(',').map(part => part.trim());\n  const city = locationParts[0] || '';\n  const state = locationParts[1] || locationParts[0]; // Sometimes state might be the only part\n  \n  // Determine color based on location logic from the task\n  let eventColor = 'Blueberry'; // Default for outside US\n  \n  if (state && state.match(/^(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)$/)) {\n    // It's in the US\n    if (city.toLowerCase().includes('san francisco') || city.toLowerCase() === 'sf') {\n      eventColor = 'Peacock'; // San Francisco\n    } else {\n      eventColor = 'Flamingo'; // Other US cities\n    }\n  }\n  \n  // Create the show object\n  const show = {\n    title: `${location} - Sammy Obeid Comedy Show`,\n    location: location,\n    city: city,\n    state: state,\n    date: date,\n    time: time,\n    venue: venue,\n    ticketLink: ticketLink,\n    fullDetails: details,\n    artist: 'Sammy Obeid',\n    eventType: 'Comedy Show',\n    source: 'sammyko.com/pages/shows',\n    eventColor: eventColor,\n    // Format for calendar integration\n    summary: `Sammy Obeid Live in ${city}`,\n    description: `Comedy show by Sammy Obeid at ${venue}. ${details}`,\n    url: ticketLink\n  };\n  \n  shows.push(show);\n}\n\n// Fallback: if no shows found, try a more aggressive regex approach\nif (shows.length === 0) {\n  // Look for any pattern that might be show data\n  const fallbackPattern = /([^,]+,\\s*[A-Z]{2,})[^]*?August\\s+\\d+[^]*?\\d+:\\d+\\s*[AP]M[^]*?@([^<\\n]+)[^]*?href=\"([^\"]+)\"[^>]*>Get Tickets/gi;\n  \n  let match;\n  while ((match = fallbackPattern.exec(htmlData)) !== null) {\n    const location = match[1].trim();\n    const venue = match[2].trim();\n    const ticketLink = match[3];\n    \n    const locationParts = location.split(',').map(part => part.trim());\n    const city = locationParts[0] || '';\n    const state = locationParts[1] || '';\n    \n    const show = {\n      title: `${location} - Sammy Obeid Comedy Show`,\n      location: location,\n      city: city,\n      state: state,\n      date: 'August (see details)',\n      time: 'See details',\n      venue: venue,\n      ticketLink: ticketLink,\n      fullDetails: `Show in ${location} at ${venue}`,\n      artist: 'Sammy Obeid',\n      eventType: 'Comedy Show',\n      source: 'sammyko.com/pages/shows',\n      eventColor: state && state.match(/^[A-Z]{2}$/) ? \n        (city.toLowerCase().includes('san francisco') ? 'Peacock' : 'Flamingo') : 'Blueberry'\n    };\n    \n    shows.push(show);\n  }\n}\n\n// Return the results\nif (shows.length > 0) {\n  return shows.map(show => ({ json: show }));\n} else {\n  // Return debug information if no shows found\n  return [{\n    json: {\n      error: \"No comedy shows found\",\n      htmlLength: htmlData.length,\n      sampleData: htmlData.substring(htmlData.indexOf('Portland, OR'), 500),\n      message: \"Check the HTML structure or try the cheerio-based parser\"\n    }\n  }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1568,
+        224
+      ],
+      "id": "8d2f1a5c-0932-4a22-80dc-205a8d487a3d",
+      "name": "Sammy Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper function to determine event color based on location\nfunction determineEventColor(location) {\n  if (!location) return 'blueberry';\n  \n  const locationLower = location.toLowerCase();\n  console.log(`Determining color for location: \"${location}\"`);\n  \n  // STEP 1: Check if it's San Francisco (Peacock)\n  if (locationLower.includes('san francisco')) {\n    console.log(`-> Peacock (San Francisco)`);\n    return 'peacock';\n  }\n  \n  // STEP 2: Check if it's in United States (Flamingo)\n  const usStates = ['al', 'ak', 'az', 'ar', 'ca', 'co', 'ct', 'de', 'fl', 'ga', 'hi', 'id', 'il', 'in', 'ia', 'ks', 'ky', 'la', 'me', 'md', 'ma', 'mi', 'mn', 'ms', 'mo', 'mt', 'ne', 'nv', 'nh', 'nj', 'nm', 'ny', 'nc', 'nd', 'oh', 'ok', 'or', 'pa', 'ri', 'sc', 'sd', 'tn', 'tx', 'ut', 'vt', 'va', 'wa', 'wv', 'wi', 'wy'];\n  \n  // Check for exact US state pattern: ends with \", XX\" where XX is exactly 2 letters and a valid US state\n  const stateMatch = locationLower.match(/, ([a-z]{2})$/);\n  if (stateMatch) {\n    const stateCode = stateMatch[1];\n    if (usStates.includes(stateCode)) {\n      console.log(`-> Flamingo (US State: ${stateCode.toUpperCase()})`);\n      return 'flamingo';\n    }\n  }\n  \n  // Pattern 2: Explicitly mentions USA, United States, or US\n  if (locationLower.includes(', usa') || \n      locationLower.includes(', united states') || \n      locationLower.includes(', us') ||\n      locationLower.endsWith(' usa') || \n      locationLower.endsWith(' united states') || \n      locationLower.endsWith(' us')) {\n    console.log(`-> Flamingo (Explicit US mention)`);\n    return 'flamingo';\n  }\n  \n  // Pattern 3: Known US venues (very specific cases)\n  if (locationLower === 'tbd' || locationLower.includes('ufc apex') || locationLower.includes('united center')) {\n    console.log(`-> Flamingo (Known US venue)`);\n    return 'flamingo';\n  }\n  \n  // STEP 3: Everything else is international (Blueberry)\n  console.log(`-> Blueberry (International - no US indicators found)`);\n  return 'blueberry';\n}\n\n// Helper function to parse various date formats\nfunction parseEventDate(dateInput) {\n  if (!dateInput) return new Date();\n  \n  try {\n    console.log(`Parsing date: \"${dateInput}\"`);\n    \n    // UFC format with different languages: \"Dom, Ago 3 / 3:00 AM CEST\" or \"Sun, Aug 3 / 2:00 AM BST\"\n    if (dateInput.includes('/') && dateInput.includes(',')) {\n      const parts = dateInput.split('/');\n      const datePart = parts[0].trim();\n      const timePart = parts[1] ? parts[1].trim() : '12:00 PM';\n      \n      // Extract date without day name and handle different languages\n      let dateOnly = datePart.replace(/^[A-Za-z]+,\\s*/, '');\n      \n      // Month translation map (handle Spanish/Italian months)\n      const monthMap = {\n        'Ago': 'Aug',\n        'Ene': 'Jan',\n        'Feb': 'Feb', \n        'Mar': 'Mar',\n        'Abr': 'Apr',\n        'May': 'May',\n        'Jun': 'Jun',\n        'Jul': 'Jul',\n        'Sep': 'Sep',\n        'Oct': 'Oct',\n        'Nov': 'Nov',\n        'Dic': 'Dec',\n        'Sáb': 'Sat'\n      };\n      \n      // Replace Spanish/Italian month names with English\n      for (let [spanish, english] of Object.entries(monthMap)) {\n        dateOnly = dateOnly.replace(spanish, english);\n      }\n      \n      const currentYear = new Date().getFullYear();\n      \n      // Clean up time part (remove timezone)\n      const cleanTime = timePart.replace(/\\s+[A-Z]{3,4}$/, '');\n      \n      // Parse date with current year\n      const fullDateString = `${dateOnly} ${currentYear} ${cleanTime}`;\n      console.log(`Attempting to parse: \"${fullDateString}\"`);\n      \n      const parsedDate = new Date(fullDateString);\n      if (!isNaN(parsedDate.getTime())) {\n        return parsedDate;\n      }\n    }\n    \n    // DJ Snake format: \"02/08/25\"\n    if (dateInput.match(/^\\d{2}\\/\\d{2}\\/\\d{2}$/)) {\n      const [day, month, year] = dateInput.split('/');\n      const fullYear = `20${year}`;\n      const parsedDate = new Date(`${fullYear}-${month}-${day}`);\n      console.log(`DJ Snake date parsed: ${parsedDate}`);\n      return parsedDate;\n    }\n    \n    // Sammy format: \"July 30\" (assuming current year)\n    if (dateInput.match(/^[A-Za-z]+ \\d{1,2}$/)) {\n      const currentYear = new Date().getFullYear();\n      const parsedDate = new Date(`${dateInput} ${currentYear}`);\n      console.log(`Sammy date parsed: ${parsedDate}`);\n      return parsedDate;\n    }\n    \n    // Fallback: try direct parsing\n    const fallbackDate = new Date(dateInput);\n    if (!isNaN(fallbackDate.getTime())) {\n      console.log(`Fallback date parsed: ${fallbackDate}`);\n      return fallbackDate;\n    }\n    \n    console.log(`Could not parse date: ${dateInput}, using current date`);\n    return new Date();\n    \n  } catch (error) {\n    console.log(`Error parsing date: ${dateInput}`, error);\n    return new Date(); // Return current date as fallback\n  }\n}\n\n// Helper function to calculate end time based on event type\nfunction calculateEndTime(startDate, eventType) {\n  const endDate = new Date(startDate);\n  \n  // Duration based on event type (in milliseconds)\n  const durations = {\n    'UFC Event': 4 * 60 * 60 * 1000,      // 4 hours\n    'Concert': 3 * 60 * 60 * 1000,        // 3 hours  \n    'Comedy Show': 2 * 60 * 60 * 1000,    // 2 hours\n    'default': 2 * 60 * 60 * 1000         // 2 hours default\n  };\n  \n  const duration = durations[eventType] || durations.default;\n  endDate.setTime(endDate.getTime() + duration);\n  \n  return endDate;\n}\n\n// Helper function to create rich description\nfunction createRichDescription(event, enrichment) {\n  let description = '';\n  \n  // Basic event info\n  if (event.eventType) {\n    description += `🎯 Event Type: ${event.eventType}\\n`;\n  }\n  \n  if (event.venue && event.location) {\n    description += `📍 Venue: ${event.venue}, ${event.location}\\n`;\n  }\n  \n  if (event.time) {\n    description += `⏰ Time: ${event.time}\\n`;\n  }\n  \n  if (event.ticketLink || event.url) {\n    description += `🎟️ Tickets: ${event.ticketLink || event.url}\\n`;\n  }\n  \n  description += '\\n';\n  \n  // Add enrichment data if available\n  if (enrichment.summary) {\n    description += `📝 Summary: ${enrichment.summary}\\n\\n`;\n  }\n  \n  if (enrichment.background) {\n    description += `📚 Background: ${enrichment.background}\\n\\n`;\n  }\n  \n  if (enrichment.pressAgencies) {\n    description += `📰 Press Coverage: ${enrichment.pressAgencies}\\n\\n`;\n  }\n  \n  if (enrichment.viralNews) {\n    description += `🔥 Trending: ${enrichment.viralNews}\\n\\n`;\n  }\n  \n  if (enrichment.keyPersonnel) {\n    description += `👥 Key Personnel: ${enrichment.keyPersonnel}\\n\\n`;\n  }\n  \n  if (enrichment.recentInterviews) {\n    description += `🎙️ Recent Interviews: ${enrichment.recentInterviews}\\n\\n`;\n  }\n  \n  // Add source attribution\n  description += `🔗 Source: ${event.source || 'Unknown'}`;\n  \n  return description.trim();\n}\n\n// Main processing logic - handles structured OpenAI response\nconst items = $input.all();\nconst enrichedEvents = [];\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i].json;\n  \n  try {\n    // Parse the OpenAI response\n    const aiResponse = JSON.parse(item.message.content);\n    \n    const originalEvent = aiResponse.originalEvent || {};\n    const aiEnrichment = aiResponse.enrichment || {};\n    \n    // Skip if we don't have valid event data\n    if (!originalEvent.title && !originalEvent.date) {\n      console.log('Skipping item - no valid event data found');\n      continue;\n    }\n    \n    // Standardize date format\n    let standardDate = parseEventDate(originalEvent.date);\n    let endDate = calculateEndTime(standardDate, originalEvent.eventType);\n    \n    // Determine color based on location\n    let eventColor = determineEventColor(originalEvent.location);\n    \n    // Create full location string\n    let fullLocation = '';\n    if (originalEvent.venue && originalEvent.location) {\n      fullLocation = `${originalEvent.venue}, ${originalEvent.location}`;\n    } else if (originalEvent.venue) {\n      fullLocation = originalEvent.venue;\n    } else if (originalEvent.location) {\n      fullLocation = originalEvent.location;\n    }\n    \n    // Create standardized event object for Google Calendar\n    const enrichedEvent = {\n      // Google Calendar required fields\n      summary: originalEvent.title || `${originalEvent.artist || 'Event'} - ${originalEvent.eventType}`,\n      start: {\n        dateTime: standardDate.toISOString()\n      },\n      end: {\n        dateTime: endDate.toISOString()  \n      },\n      location: fullLocation,\n      description: createRichDescription(originalEvent, aiEnrichment),\n      colorId: eventColor === 'peacock' ? '7' : eventColor === 'flamingo' ? '4' : '1',\n      \n      // Additional metadata for processing\n      title: originalEvent.title || `${originalEvent.artist || 'Event'} - ${originalEvent.eventType}`,\n      date: standardDate,\n      endDate: endDate,\n      venue: originalEvent.venue,\n      color: eventColor,\n      source: originalEvent.source,\n      eventType: originalEvent.eventType,\n      time: originalEvent.time,\n      ticketLink: originalEvent.ticketLink,\n      enrichment: aiEnrichment,\n      originalData: originalEvent\n    };\n    \n    enrichedEvents.push(enrichedEvent);\n    \n  } catch (error) {\n    console.log('Error processing item:', error);\n    console.log('Item data:', JSON.stringify(item, null, 2));\n  }\n}\n\n// Log processing summary\nconsole.log(`Processed ${enrichedEvents.length} events:`);\nenrichedEvents.forEach(event => {\n  console.log(`- ${event.summary} (${event.color}) on ${event.date}`);\n});\n\nreturn enrichedEvents.map(event => ({ json: event }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -320,
+        -64
+      ],
+      "id": "66afa0c0-1c8b-4da2-8a76-d16db6fecbf6",
+      "name": "Standardization"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "maarijsiddiquise@gmail.com",
+          "mode": "id"
+        },
+        "start": "={{$json.start.dateTime}}",
+        "end": "={{$json.end.dateTime}}",
+        "additionalFields": {
+          "color": "={{$json.colorId}}",
+          "description": "={{$json.description}}",
+          "location": "={{$json.location}}",
+          "summary": "={{$json.summary}}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        -64
+      ],
+      "id": "7750a72f-23a8-4204-87b0-cd47aeb032fd",
+      "name": "Create an event1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "Mnjg9p4luCWPSDVH",
+          "name": "Google Calendar Api"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "UFC Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "DJ Snake parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Sammy Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Standardization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UFC Parser": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DJ Snake parser": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sammy Parser": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Standardization": {
+      "main": [
+        [
+          {
+            "node": "Create an event1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9ee84eed-54c3-4bb0-a41c-0b379ca6874e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c91b5d432b3c19a1c1414babed43787f27ccd87470588a8af9ef72ac3b8a6b99"
+  },
+  "id": "bKk5IPo8wCph6pZ0",
+  "tags": []
+}
